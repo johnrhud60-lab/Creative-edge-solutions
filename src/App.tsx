@@ -392,11 +392,31 @@ const Portfolio = () => {
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({ name: '', service: '', phone: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Thank you! We will contact you shortly.');
-    setFormData({ name: '', service: '', phone: '' });
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch('/api/print-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, details: 'General Inquiry' }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setSuccessMessage(data.message);
+        setFormData({ name: '', service: '', phone: '' });
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('Transmission failed. Please check your connection.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -407,56 +427,203 @@ const ContactForm = () => {
           <p className="text-white/50">Fill out the form below and our command center will reach out.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-2">Full Name</label>
-              <input 
-                required
-                type="text" 
-                placeholder="John Doe"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-neon-cyan transition-colors"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-2">Phone Number</label>
-              <input 
-                required
-                type="tel" 
-                placeholder="+254 7XX XXX XXX"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-neon-cyan transition-colors"
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-2">Service Required</label>
-            <select 
-              required
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-neon-cyan transition-colors appearance-none"
-              value={formData.service}
-              onChange={(e) => setFormData({...formData, service: e.target.value})}
-            >
-              <option value="" disabled className="bg-black">Select a service</option>
-              <option value="it" className="bg-black">IT Support / Software</option>
-              <option value="print" className="bg-black">Printing / Design</option>
-              <option value="other" className="bg-black">Other Inquiry</option>
-            </select>
-          </div>
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            type="submit"
-            className="w-full py-5 bg-white text-black font-bold rounded-2xl hover:bg-neon-cyan transition-all"
+        {successMessage ? (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-8 bg-neon-cyan/10 border border-neon-cyan/30 rounded-3xl text-center"
           >
-            Send Transmission
-          </motion.button>
-        </form>
+            <CheckCircle2 className="w-16 h-16 text-neon-cyan mx-auto mb-4" />
+            <h3 className="text-2xl font-bold mb-2">Transmission Successful</h3>
+            <p className="text-white/70 mb-6">{successMessage}</p>
+            <button 
+              onClick={() => setSuccessMessage('')}
+              className="px-8 py-3 bg-neon-cyan text-black font-bold rounded-xl"
+            >
+              Send Another
+            </button>
+          </motion.div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-2">Full Name</label>
+                <input 
+                  required
+                  type="text" 
+                  placeholder="John Doe"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-neon-cyan transition-colors"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-2">Phone Number</label>
+                <input 
+                  required
+                  type="tel" 
+                  placeholder="+254 7XX XXX XXX"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-neon-cyan transition-colors"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-2">Service Required</label>
+              <select 
+                required
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:border-neon-cyan transition-colors appearance-none"
+                value={formData.service}
+                onChange={(e) => setFormData({...formData, service: e.target.value})}
+              >
+                <option value="" disabled className="bg-black">Select a service</option>
+                <option value="it" className="bg-black">IT Support / Software</option>
+                <option value="print" className="bg-black">Printing / Design</option>
+                <option value="other" className="bg-black">Other Inquiry</option>
+              </select>
+            </div>
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              disabled={isSubmitting}
+              className={cn(
+                "w-full py-5 font-bold rounded-2xl transition-all",
+                isSubmitting ? "bg-white/20 text-white/40 cursor-not-allowed" : "bg-white text-black hover:bg-neon-cyan"
+              )}
+            >
+              {isSubmitting ? "Transmitting..." : "Send Transmission"}
+            </motion.button>
+          </form>
+        )}
       </div>
     </section>
+  );
+};
+
+const PrintOrderModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  const [formData, setFormData] = useState({ name: '', phone: '', service: 'Banners', details: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/print-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          setSuccess(false);
+          onClose();
+          setFormData({ name: '', phone: '', service: 'Banners', details: '' });
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error submitting print order:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-3xl p-8 shadow-2xl"
+          >
+            <button onClick={onClose} className="absolute top-6 right-6 text-white/40 hover:text-white">
+              <X className="w-6 h-6" />
+            </button>
+
+            {success ? (
+              <div className="text-center py-12">
+                <CheckCircle2 className="w-20 h-20 text-neon-green mx-auto mb-6" />
+                <h3 className="text-2xl font-bold mb-2 text-neon-green">Order Received!</h3>
+                <p className="text-white/60">Transmission confirmed. Closing in 3 seconds...</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-8">
+                  <h3 className="text-2xl font-bold mb-2">Start a Print Order</h3>
+                  <p className="text-white/50 text-sm">Configure your printing requirements below.</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Full Name</label>
+                    <input 
+                      required
+                      type="text" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-neon-green"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Phone Number</label>
+                    <input 
+                      required
+                      type="tel" 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-neon-green"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Print Type</label>
+                    <select 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-neon-green appearance-none"
+                      value={formData.service}
+                      onChange={(e) => setFormData({...formData, service: e.target.value})}
+                    >
+                      <option value="Banners" className="bg-black">Banners</option>
+                      <option value="Flyers" className="bg-black">Flyers</option>
+                      <option value="Branding" className="bg-black">Branding</option>
+                      <option value="Eulogies" className="bg-black">Eulogies</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40">Order Details</label>
+                    <textarea 
+                      placeholder="Size, quantity, specific requirements..."
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-neon-green min-h-[100px]"
+                      value={formData.details}
+                      onChange={(e) => setFormData({...formData, details: e.target.value})}
+                    />
+                  </div>
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isSubmitting}
+                    className="w-full py-4 bg-neon-green text-black font-bold rounded-xl mt-4"
+                  >
+                    {isSubmitting ? "Transmitting..." : "Initialize Order"}
+                  </motion.button>
+                </form>
+              </>
+            )}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -567,11 +734,92 @@ const WhatsAppButton = () => {
 };
 
 export default function App() {
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-neon-cyan selection:text-black">
       <Navbar />
       <main>
-        <Hero />
+        {/* Hero Section with Modal Trigger */}
+        <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+          {/* Futuristic Background Elements */}
+          <div className="absolute inset-0 z-0">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-neon-cyan/10 rounded-full blur-[120px]" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-neon-green/10 rounded-full blur-[120px]" />
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+            
+            {/* Grid lines */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]" />
+          </div>
+
+          <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-bold tracking-widest uppercase text-neon-cyan mb-6">
+                <Zap className="w-3 h-3" /> Digital Command Center
+              </div>
+              <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-8">
+                Your Global Digital <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-neon-green">
+                  Command Center
+                </span> <br />
+                for IT & Creative Solutions
+              </h1>
+              <p className="text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-10">
+                From high-security software development to premium large-format printing, 
+                we bridge the gap between digital excellence and physical branding.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <motion.a 
+                  href="#contact"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full sm:w-auto px-8 py-4 bg-neon-cyan text-black font-bold rounded-xl shadow-[0_0_20px_rgba(0,242,255,0.4)] flex items-center justify-center gap-2"
+                >
+                  Get IT Support <ChevronRight className="w-5 h-5" />
+                </motion.a>
+                <motion.button 
+                  onClick={() => setIsPrintModalOpen(true)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full sm:w-auto px-8 py-4 bg-transparent border-2 border-neon-green text-neon-green font-bold rounded-xl hover:bg-neon-green/10 transition-all flex items-center justify-center gap-2"
+                >
+                  Start a Print Order <Printer className="w-5 h-5" />
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Floating UI Elements for Aesthetic */}
+          <motion.div 
+            animate={{ y: [0, -20, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="hidden lg:block absolute top-1/3 right-10 p-4 bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-3 h-3 rounded-full bg-neon-green" />
+              <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">System Status</span>
+            </div>
+            <div className="text-xl font-mono">FAILSAFE ACTIVE</div>
+          </motion.div>
+
+          <motion.div 
+            animate={{ y: [0, 20, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="hidden lg:block absolute bottom-1/4 left-10 p-4 bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-3 h-3 rounded-full bg-neon-cyan" />
+              <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Security Protocol</span>
+            </div>
+            <div className="text-xl font-mono">ENCRYPTED_v2.0</div>
+          </motion.div>
+        </section>
+
         <TrustSignals />
         <Services />
         <Portfolio />
@@ -580,6 +828,7 @@ export default function App() {
       </main>
       <Footer />
       <WhatsAppButton />
+      <PrintOrderModal isOpen={isPrintModalOpen} onClose={() => setIsPrintModalOpen(false)} />
     </div>
   );
 }
